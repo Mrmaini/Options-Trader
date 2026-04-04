@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import { Settings, BarChart2, Target, Radio, BookOpen } from 'lucide-react';
+import { Settings, BarChart2, Target, Radio, Activity, Scan } from 'lucide-react';
 
 interface MobileNavProps {
   activeSection: string;
@@ -9,9 +9,9 @@ interface MobileNavProps {
 const navItems = [
   { id: 'setup', label: 'Setup', icon: Settings },
   { id: 'signals', label: 'Signals', icon: Radio },
+  { id: 'scanner', label: 'Scanner', icon: Scan },
+  { id: 'flow', label: 'Flow', icon: Activity },
   { id: 'chain', label: 'Chain', icon: BarChart2 },
-  { id: 'calculator', label: 'R/R', icon: Target },
-  { id: 'plan', label: 'Plan', icon: BookOpen },
 ];
 
 export function MobileNav({ activeSection, onNavigate }: MobileNavProps) {

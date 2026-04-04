@@ -10,13 +10,15 @@ import { MarketContextPanel } from './components/market-context/MarketContextPan
 import { StrategyRecommender } from './components/strategy-recommender/StrategyRecommender';
 import { TradePlanGenerator } from './components/trade-plan/TradePlanGenerator';
 import { SignalPanel } from './components/signals/SignalPanel';
+import { OptionsFlowPanel } from './components/flow/OptionsFlowPanel';
+import { MarketScannerPanel } from './components/scanner/MarketScannerPanel';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } },
 });
 
-type Section = 'setup' | 'chain' | 'calculator' | 'market' | 'signals' | 'plan';
+type Section = 'setup' | 'signals' | 'scanner' | 'flow' | 'chain' | 'calculator' | 'market' | 'plan';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<Section>('setup');
@@ -29,25 +31,32 @@ export default function App() {
         <MobileNav activeSection={activeSection} onNavigate={(s) => setActiveSection(s as Section)} />
 
         <main className="pt-12 pb-20 lg:pb-4 lg:pl-16 xl:pl-48 min-h-screen">
-          <div className="max-w-5xl mx-auto p-4 lg:p-6">
+          <div className="max-w-6xl mx-auto p-4 lg:p-6">
 
             {/* Desktop: full dashboard */}
             <div className="hidden lg:block space-y-6">
+              {/* Row 1: Setup + Strategy */}
               <div className="grid grid-cols-5 gap-4">
-                <div className="col-span-2">
-                  <ErrorBoundary><TradeSetupForm /></ErrorBoundary>
-                </div>
-                <div className="col-span-3">
-                  <ErrorBoundary><StrategyRecommender /></ErrorBoundary>
-                </div>
+                <div className="col-span-2"><ErrorBoundary><TradeSetupForm /></ErrorBoundary></div>
+                <div className="col-span-3"><ErrorBoundary><StrategyRecommender /></ErrorBoundary></div>
               </div>
 
-              {/* Signal Panel — prominent position */}
-              <ErrorBoundary><SignalPanel /></ErrorBoundary>
+              {/* Row 2: Signals + Market Scanner */}
+              <div className="grid grid-cols-2 gap-4">
+                <ErrorBoundary><SignalPanel /></ErrorBoundary>
+                <ErrorBoundary><MarketScannerPanel /></ErrorBoundary>
+              </div>
 
+              {/* Row 3: Options Flow */}
+              <ErrorBoundary><OptionsFlowPanel /></ErrorBoundary>
+
+              {/* Row 4: Market Context */}
               <ErrorBoundary><MarketContextPanel /></ErrorBoundary>
+
+              {/* Row 5: Options Chain */}
               <ErrorBoundary><OptionsChainScanner /></ErrorBoundary>
 
+              {/* Row 6: Risk/Reward + Trade Plan */}
               <div className="grid grid-cols-2 gap-4">
                 <ErrorBoundary><RiskRewardCalculator /></ErrorBoundary>
                 <ErrorBoundary><TradePlanGenerator /></ErrorBoundary>
@@ -57,21 +66,16 @@ export default function App() {
             {/* Mobile: single section */}
             <div className="lg:hidden">
               <ErrorBoundary>
-                {activeSection === 'setup' && (
-                  <div className="space-y-4">
-                    <TradeSetupForm />
-                    <SignalPanel />
-                    <StrategyRecommender />
-                  </div>
-                )}
+                {activeSection === 'setup' && <div className="space-y-4"><TradeSetupForm /><StrategyRecommender /></div>}
+                {activeSection === 'signals' && <div className="space-y-4"><SignalPanel /></div>}
+                {activeSection === 'scanner' && <MarketScannerPanel />}
+                {activeSection === 'flow' && <OptionsFlowPanel />}
                 {activeSection === 'chain' && <OptionsChainScanner />}
                 {activeSection === 'calculator' && <RiskRewardCalculator />}
                 {activeSection === 'market' && <MarketContextPanel />}
-                {activeSection === 'signals' && <SignalPanel />}
                 {activeSection === 'plan' && <TradePlanGenerator />}
               </ErrorBoundary>
             </div>
-
           </div>
         </main>
       </div>
