@@ -141,7 +141,7 @@ export async function getMarketContext(): Promise<{ spy: QuoteData; qqq: QuoteDa
     const [spy, qqq, vix] = await Promise.all([
       getQuote('SPY'),
       getQuote('QQQ'),
-      getQuote('%5EVIX'),
+      getQuote('^VIX'),
     ]);
     return { spy, qqq, vix };
   });
@@ -165,6 +165,43 @@ export async function getHistoricalData(symbol: string, period: '1mo' | '3mo' | 
       close: closes[i] ?? 0,
       high: highs[i] ?? 0,
       low: lows[i] ?? 0,
+    })).filter((b) => b.close > 0);
+  });
+}
+
+export interface IntradayBar {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+export async function getIntradayData(symbol: string, interval: '5m' | '15m' | '1h' = '5m'): Promise<IntradayBar[]> {
+  const key = `intraday:${symbol.toUpperCase()}:${interval}`;
+  return getCacheOrFetch(key, 60, async () => {
+    const range = interval === '1h' ? '5d' : '2d';
+    const url = `${YF1}/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=${range}`;
+    const { data } = await http.get(url);
+    const result = data?.chart?.result?.[0];
+    if (!result) throw new Error(`No intraday data for ${symbol}`);
+
+    const timestamps: number[] = result.timestamp ?? [];
+    const q = result.indicators?.quote?.[0] ?? {};
+    const opens: number[] = q.open ?? [];
+    const highs: number[] = q.high ?? [];
+    const lows: number[] = q.low ?? [];
+    const closes: number[] = q.close ?? [];
+    const volumes: number[] = q.volume ?? [];
+
+    return timestamps.map((ts, i) => ({
+      time: new Date(ts * 1000).toISOString(),
+      open: opens[i] ?? 0,
+      high: highs[i] ?? 0,
+      low: lows[i] ?? 0,
+      close: closes[i] ?? 0,
+      volume: volumes[i] ?? 0,
     })).filter((b) => b.close > 0);
   });
 }

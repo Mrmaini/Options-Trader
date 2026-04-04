@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import { Settings, TrendingUp, BarChart2, BookOpen, Target, Zap } from 'lucide-react';
+import { Settings, TrendingUp, BarChart2, BookOpen, Target, Zap, Radio } from 'lucide-react';
 
 interface SidebarProps {
   activeSection: string;
@@ -8,10 +8,10 @@ interface SidebarProps {
 
 const navItems = [
   { id: 'setup', label: 'Trade Setup', icon: Settings },
+  { id: 'signals', label: 'Signals', icon: Radio },
   { id: 'chain', label: 'Options Chain', icon: BarChart2 },
   { id: 'calculator', label: 'Risk/Reward', icon: Target },
   { id: 'market', label: 'Market Context', icon: TrendingUp },
-  { id: 'strategy', label: 'Strategy', icon: Zap },
   { id: 'plan', label: 'Trade Plan', icon: BookOpen },
 ];
 
