@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg: #0a0a0f;
+    --color-surface: #12121a;
+    --color-border: #1e1e2e;
+    --color-muted: #2a2a3e;
+    --color-text: #e2e8f0;
+    --color-dim: #64748b;
+    --color-green: #22c55e;
+    --color-red: #ef4444;
+    --color-amber: #f59e0b;
+    --color-blue: #3b82f6;
+    --color-purple: #a855f7;
+    --color-cyan: #06b6d4;
+  }
+
+  * {
+    @apply border-terminal-border;
+  }
+
+  body {
+    @apply bg-terminal-bg text-terminal-text font-mono;
+    background-image: linear-gradient(
+        rgba(59, 130, 246, 0.03) 1px,
+        transparent 1px
+      ),
+      linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #12121a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #2a2a3e;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3b82f6;
+  }
+}
+
+@layer components {
+  .terminal-card {
+    @apply bg-terminal-surface border border-terminal-border rounded-lg;
+  }
+
+  .terminal-input {
+    @apply bg-terminal-muted border border-terminal-border rounded px-3 py-2 text-terminal-text text-sm
+           placeholder:text-terminal-dim focus:outline-none focus:border-terminal-blue focus:ring-1 focus:ring-terminal-blue/30
+           transition-colors;
+  }
+
+  .terminal-btn {
+    @apply px-4 py-2 rounded text-sm font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-terminal-bg;
+  }
+
+  .terminal-btn-primary {
+    @apply terminal-btn bg-terminal-blue text-white hover:bg-blue-400 focus:ring-terminal-blue;
+  }
+
+  .terminal-btn-ghost {
+    @apply terminal-btn bg-transparent text-terminal-dim hover:text-terminal-text hover:bg-terminal-muted focus:ring-terminal-muted;
+  }
+
+  .profit { @apply text-terminal-green; }
+  .loss { @apply text-terminal-red; }
+  .warning { @apply text-terminal-amber; }
+  .info { @apply text-terminal-blue; }
+  .neutral { @apply text-terminal-dim; }
+}
