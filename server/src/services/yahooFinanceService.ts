@@ -28,15 +28,38 @@ async function refreshSession(): Promise<void> {
   console.log('[YF] Session refreshed, crumb:', _crumb ? _crumb.slice(0, 8) + '…' : 'null');
 }
 
-async function http_get(url: string): Promise<any> {
-  // Refresh session if older than 30 minutes or not yet set
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Simple per-host rate limiter — max 1 req per 300ms
+let _lastRequestAt = 0;
+async function throttle() {
+  const now = Date.now();
+  const wait = 300 - (now - _lastRequestAt);
+  if (wait > 0) await sleep(wait);
+  _lastRequestAt = Date.now();
+}
+
+async function http_get(url: string, retries = 3): Promise<any> {
   if (!_crumb || Date.now() - _sessionRefreshedAt > 30 * 60 * 1000) {
     await refreshSession();
   }
+  await throttle();
   const sep = url.includes('?') ? '&' : '?';
   const finalUrl = _crumb ? `${url}${sep}crumb=${encodeURIComponent(_crumb)}` : url;
-  const resp = await rawHttp.get(finalUrl, { headers: { Cookie: _cookies } });
-  return resp.data;
+  try {
+    const resp = await rawHttp.get(finalUrl, { headers: { Cookie: _cookies } });
+    return resp.data;
+  } catch (err: any) {
+    const status = err?.response?.status;
+    if ((status === 429 || status === 401) && retries > 0) {
+      const backoff = status === 429 ? 2000 : 500;
+      console.warn(`[YF] ${status} on ${url.split('?')[0]} — retrying in ${backoff}ms (${retries} left)`);
+      await sleep(backoff);
+      if (status === 401) { _crumb = null; } // force session refresh
+      return http_get(url, retries - 1);
+    }
+    throw err;
+  }
 }
 
 // ---------- Interfaces ----------

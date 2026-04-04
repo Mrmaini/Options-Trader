@@ -117,12 +117,15 @@ async function scanTicker(symbol: string) {
 router.get('/market', quotesLimiter, async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const key = 'scanner:market';
-    const results = await getCacheOrFetch(key, 120, async () => {
-      const settled = await Promise.allSettled(WATCHLIST.map(scanTicker));
-      return settled
-        .map((r) => r.status === 'fulfilled' ? r.value : null)
-        .filter(Boolean)
-        .sort((a: any, b: any) => b.strength - a.strength);
+    const results = await getCacheOrFetch(key, 300, async () => {
+      // Scan sequentially with small delay to avoid rate limiting
+      const results: any[] = [];
+      for (const symbol of WATCHLIST) {
+        const r = await scanTicker(symbol);
+        if (r) results.push(r);
+        await new Promise((res) => setTimeout(res, 400)); // 400ms between each
+      }
+      return results.sort((a, b) => b.strength - a.strength);
     });
     res.json(results);
   } catch (err) { next(err); }
