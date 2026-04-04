@@ -1,8 +1,5 @@
+import yahooFinance from 'yahoo-finance2';
 import { getCacheOrFetch, TTL } from './cacheService';
-
-// yahoo-finance2 is ESM-only; use dynamic import for CommonJS compatibility
-const yfPromise: Promise<any> = import('yahoo-finance2').then((m: any) => m.default ?? m);
-async function yf() { return yfPromise; }
 
 export interface QuoteData {
   symbol: string;
@@ -78,7 +75,7 @@ function transformOption(raw: any, type: 'call' | 'put', expiration: string): Op
 export async function getQuote(symbol: string): Promise<QuoteData> {
   const key = `quote:${symbol.toUpperCase()}`;
   return getCacheOrFetch(key, TTL.QUOTE, async () => {
-    const result = await (await yf()).quote(symbol.toUpperCase());
+    const result = await yahooFinance.quote(symbol.toUpperCase());
     return {
       symbol: result.symbol,
       price: result.regularMarketPrice ?? 0,
@@ -102,7 +99,7 @@ export async function getOptionsChain(symbol: string, expiration?: string): Prom
     const options: any = {};
     if (expiration) options.date = new Date(expiration);
 
-    const result = await (await yf()).options(symbol.toUpperCase(), options);
+    const result = await yahooFinance.options(symbol.toUpperCase(), options);
     const underlyingPrice = result.quote?.regularMarketPrice ?? 0;
     const expirationDates = (result.expirationDates ?? []).map((d: Date | number) =>
       new Date(d).toISOString().split('T')[0]
@@ -145,7 +142,7 @@ export async function getHistoricalData(symbol: string, period: '1mo' | '3mo' | 
     const months = period === '1mo' ? 1 : period === '3mo' ? 3 : period === '6mo' ? 6 : 12;
     startDate.setMonth(startDate.getMonth() - months);
 
-    const result = await (await yf()).historical(symbol.toUpperCase(), {
+    const result = await yahooFinance.historical(symbol.toUpperCase(), {
       period1: startDate,
       period2: endDate,
       interval: '1d',
@@ -164,7 +161,7 @@ export async function getEarnings(symbol: string): Promise<EarningsData> {
   const key = `earnings:${symbol.toUpperCase()}`;
   return getCacheOrFetch(key, TTL.EARNINGS, async () => {
     try {
-      const result = await (await yf()).quoteSummary(symbol.toUpperCase(), {
+      const result = await yahooFinance.quoteSummary(symbol.toUpperCase(), {
         modules: ['calendarEvents'],
       });
       const events = (result as any).calendarEvents;
