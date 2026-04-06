@@ -29,15 +29,15 @@ export interface FlowData {
   flows: FlowItem[];
 }
 
-export function useOptionsFlow(symbol: string) {
+export function useOptionsFlow(symbol: string, enabled = true) {
   return useQuery<FlowData>({
     queryKey: ['flow', symbol],
     queryFn: async () => {
       const { data } = await api.get<FlowData>(`/flow/${symbol}`);
       return data;
     },
-    enabled: !!symbol,
-    staleTime: 3 * 60 * 1000,
-    retry: 2,
+    enabled: !!symbol && enabled,
+    staleTime: 15 * 60 * 1000,
+    retry: 1,
   });
 }

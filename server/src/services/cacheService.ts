@@ -3,10 +3,10 @@ import NodeCache from 'node-cache';
 const cache = new NodeCache({ useClones: false });
 
 const TTL = {
-  QUOTE: 30,          // 30 seconds
-  CHAIN: 300,         // 5 minutes
-  MARKET: 60,         // 1 minute
-  EARNINGS: 86400,    // 24 hours
+  QUOTE: 300,          // 5 minutes (was 30s)
+  CHAIN: 1800,         // 30 minutes (was 5m)
+  MARKET: 600,         // 10 minutes (was 1m)
+  EARNINGS: 86400,     // 24 hours
 };
 
 export function getCache<T>(key: string): T | undefined {

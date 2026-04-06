@@ -11,13 +11,14 @@ import type { FlowItem } from '../../hooks/useOptionsFlow';
 
 export function OptionsFlowPanel() {
   const { ticker } = useTradeSetupStore();
-  const { data: flow, isLoading, error } = useOptionsFlow(ticker);
+  const [loadRequested, setLoadRequested] = useState(false);
+  const { data: flow, isLoading, error } = useOptionsFlow(ticker, loadRequested);
   const [filter, setFilter] = useState<'all' | 'unusual' | 'calls' | 'puts'>('all');
 
   if (!ticker) return (
     <Card>
       <SectionHeader title="Options Flow" icon={<Activity className="w-4 h-4" />} />
-      <p className="text-terminal-dim text-sm text-center py-6">Enter a ticker to see options flow.</p>
+      <p className="text-terminal-dim text-sm text-center py-6">Enter a ticker in Trade Setup to see options flow.</p>
     </Card>
   );
 
@@ -40,6 +41,12 @@ export function OptionsFlowPanel() {
           action={flow && <Badge variant={sentimentVariant}>{flow.flowSentiment.toUpperCase()} FLOW</Badge>}
         />
 
+        {!loadRequested && !flow && (
+          <div className="text-center py-8">
+            <p className="text-terminal-dim text-xs mb-3">Flow data loads the full options chain — click to fetch.</p>
+            <button onClick={() => setLoadRequested(true)} className="terminal-btn-primary text-xs">Load Options Flow</button>
+          </div>
+        )}
         {isLoading && <div className="flex items-center justify-center py-10 gap-3"><Spinner /><span className="text-terminal-dim text-sm">Loading flow data...</span></div>}
         {error && <p className="text-terminal-red text-xs p-3 bg-terminal-red/10 border border-terminal-red/30 rounded">Failed to load flow: {error.message}</p>}
 

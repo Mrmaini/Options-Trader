@@ -30,20 +30,33 @@ async function refreshSession(): Promise<void> {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-// Simple per-host rate limiter — max 1 req per 300ms
-let _lastRequestAt = 0;
-async function throttle() {
-  const now = Date.now();
-  const wait = 300 - (now - _lastRequestAt);
-  if (wait > 0) await sleep(wait);
-  _lastRequestAt = Date.now();
+// ---- Global serial request queue: max 1 req/800ms to Yahoo Finance ----
+type QueueTask = { fn: () => Promise<any>; resolve: (v: any) => void; reject: (e: any) => void };
+const _queue: QueueTask[] = [];
+let _queueRunning = false;
+
+async function runQueue() {
+  if (_queueRunning) return;
+  _queueRunning = true;
+  while (_queue.length > 0) {
+    const task = _queue.shift()!;
+    try { task.resolve(await task.fn()); } catch (e) { task.reject(e); }
+    if (_queue.length > 0) await sleep(800); // 800ms between requests
+  }
+  _queueRunning = false;
 }
 
-async function http_get(url: string, retries = 3): Promise<any> {
-  if (!_crumb || Date.now() - _sessionRefreshedAt > 30 * 60 * 1000) {
+function enqueue<T>(fn: () => Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    _queue.push({ fn, resolve, reject });
+    runQueue();
+  });
+}
+
+async function _doGet(url: string, retries = 3): Promise<any> {
+  if (!_crumb || Date.now() - _sessionRefreshedAt > 25 * 60 * 1000) {
     await refreshSession();
   }
-  await throttle();
   const sep = url.includes('?') ? '&' : '?';
   const finalUrl = _crumb ? `${url}${sep}crumb=${encodeURIComponent(_crumb)}` : url;
   try {
@@ -51,15 +64,23 @@ async function http_get(url: string, retries = 3): Promise<any> {
     return resp.data;
   } catch (err: any) {
     const status = err?.response?.status;
-    if ((status === 429 || status === 401) && retries > 0) {
-      const backoff = status === 429 ? 2000 : 500;
-      console.warn(`[YF] ${status} on ${url.split('?')[0]} — retrying in ${backoff}ms (${retries} left)`);
-      await sleep(backoff);
-      if (status === 401) { _crumb = null; } // force session refresh
-      return http_get(url, retries - 1);
+    if (status === 401 && retries > 0) {
+      _crumb = null;
+      await sleep(500);
+      return _doGet(url, retries - 1);
+    }
+    if (status === 429 && retries > 0) {
+      console.warn(`[YF] 429 — backing off 5s (${retries} retries left)`);
+      await sleep(5000);
+      return _doGet(url, retries - 1);
     }
     throw err;
   }
+}
+
+// All external callers go through the queue
+function http_get(url: string): Promise<any> {
+  return enqueue(() => _doGet(url));
 }
 
 // ---------- Interfaces ----------
